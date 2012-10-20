@@ -57,6 +57,7 @@ class Dbsync {
     public $blank_column = array(
 		'type' => '',
 		'constraint' => false,
+        'default' => false,
 		'primary' => false,
 		'index' => false,
 		'unique' => false,
@@ -245,22 +246,23 @@ class Dbsync {
 
     					// Set want_tables column, if there later needs to be changes this will be the after
     					$this->final_action[$t_key]['columns'][$c_key] = $c_value;
-    					$this->final_action[$t_key]['columns'][$c_key]['action'] = false;
+    					$this->final_action[$t_key]['columns'][$c_key]['action'] = 'none';
 
     					// Start checking the two columns for differences
     					$want_column_info = $this->want_tables[$t_key]['columns'][$c_key];
     					$itis_column_info = $this->itis_tables[$t_key]['columns'][$c_key];
 
     					foreach($want_column_info as $a_key => $a_value) {
-    						if($a_value !== $itis_column_info[$a_key]) {
-
+    						if(strtolower($a_value) !== strtolower($itis_column_info[$a_key])) {
+                                echo 'table '.$t_key.' column '.$c_key.' field '.$a_key.'<br />';
+                                echo 'Changes from '.$a_value.' to '.$itis_column_info[$a_key].' <br /><br />';
     						}
     					}
     				}
     			}
 
     			// Loop through itis table columns to see if we need to delete any
-		    	foreach($this->itis_tables[$t_key] as $c_key => $c_value) {
+		    	foreach($this->itis_tables[$t_key]['columns'] as $c_key => $c_value) {
 		    		if(!isset($this->want_tables[$t_key]['columns'][$c_key])) {
 		    			$this->final_action[$t_key]['columns'][$c_key] = $c_value;
 		    			$this->final_action[$t_key]['columns'][$c_key]['action'] = 'delete';
