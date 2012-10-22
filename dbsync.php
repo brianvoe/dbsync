@@ -64,6 +64,14 @@ class Dbsync {
 		'auto_increment' => false,
 		'null' => false
 	);
+    public $blank_table_actions = array(
+        't_add' => false, 't_change' => false, 't_delete' => false,
+        'c_add' => false, 'c_change' => false, 'c_delete' => false
+    );
+    public $blank_column_actions = array(
+        'c_add' => false, 'c_change' => false, 'c_delete' => false,
+        'a_add' => false, 'a_change' => false, 'a_delete' => false
+    );
 
     // Usable Variables
     public $num_adds = 0;
@@ -106,6 +114,13 @@ class Dbsync {
     /////////////////////////////////
     // Table compilation fucntions //
     /////////////////////////////////
+    function compile_compare() {
+        $this->compile_want_tables();
+        $this->compile_itis_tables();
+        $this->compare_final();
+        return $this->final_action;
+    }
+
     function compile_want_tables() {
     	// Start by empting want_tables array
     	$this->want_tables = array();
@@ -190,6 +205,7 @@ class Dbsync {
 						$this->itis_tables[$table_name]['columns'][$c_info->Field] = array(
 							'type' => $field['type'],
 							'constraint' => $field['constraint'],
+                            'default' => $c_info->Default,
 							'primary' => ($c_info->Key == 'PRI' ? true: false),
 							'index' => ($c_info->Key == 'MUL' ? true: false),
 							'unique' => ($c_info->Key == 'UNI' ? true: false),
@@ -227,26 +243,30 @@ class Dbsync {
 
     	// Take want_tables list and check agains itis_tables list
     	foreach($this->want_tables as $t_key => $t_value) {
+            // Add want tables to final_action
+            $this->final_action[$t_key] = $t_value;
+            $this->final_action[$t_key]['action'] = $this->blank_table_actions;
+
     		if(!isset($this->itis_tables[$t_key])) {
     			// want_tables is not in itis_tables, need to add it
-    			$this->final_action[$t_key] = $t_value;
-    			$this->final_action[$t_key]['action'] = 'add';
+    			$this->final_action[$t_key]['action']['t_add'] = true;
+                $this->num_adds++;
     		} else {
     			// Does exists lets check to see if we need to add anything
+
     			// Start looping through want_table columns
     			foreach($this->want_tables[$t_key]['columns'] as $c_key => $c_value) {
+                    // Add want tables columns to current table
+                    $this->final_action[$t_key]['columns'][$c_key] = $c_value;
+                    $this->final_action[$t_key]['columns'][$c_key]['action'] = $this->blank_column_actions;
+
     				if(!isset($this->itis_tables[$t_key]['columns'][$c_key])) {
     					// want_tables column is not in itis_tables column, need to add it
-    					$this->final_action[$t_key]['columns'][$c_key] = $c_value;
-    					$this->final_action[$t_key]['columns'][$c_key]['action'] = 'add';
+                        $this->final_action[$t_key]['action']['c_add'] = true; // Tell parent table there are c_add's
+    					$this->final_action[$t_key]['columns'][$c_key]['action']['c_add'] = true;
+                        $this->num_adds++;
     				} else {
     					// want_tables column does exists in itis_tables column, lets check column attributes
-    					// Set variable to check for changes
-    					$changes = array();
-
-    					// Set want_tables column, if there later needs to be changes this will be the after
-    					$this->final_action[$t_key]['columns'][$c_key] = $c_value;
-    					$this->final_action[$t_key]['columns'][$c_key]['action'] = 'none';
 
     					// Start checking the two columns for differences
     					$want_column_info = $this->want_tables[$t_key]['columns'][$c_key];
@@ -254,18 +274,25 @@ class Dbsync {
 
     					foreach($want_column_info as $a_key => $a_value) {
     						if(strtolower($a_value) !== strtolower($itis_column_info[$a_key])) {
-                                echo 'table '.$t_key.' column '.$c_key.' field '.$a_key.'<br />';
-                                echo 'Changes from '.$a_value.' to '.$itis_column_info[$a_key].' <br /><br />';
+                                $this->final_action[$t_key]['columns'][$c_key]['action']['a_change'] = true;
+                                $this->num_changes++;
     						}
     					}
+
+                        if($this->final_action[$t_key]['columns'][$c_key]['action']['a_change'] == true) {
+                            $this->final_action[$t_key]['columns'][$c_key]['action']['c_change'] = true;
+                            $this->final_action[$t_key]['columns'][$c_key]['itis'] = $itis_column_info;
+                        }
     				}
     			}
 
     			// Loop through itis table columns to see if we need to delete any
 		    	foreach($this->itis_tables[$t_key]['columns'] as $c_key => $c_value) {
 		    		if(!isset($this->want_tables[$t_key]['columns'][$c_key])) {
-		    			$this->final_action[$t_key]['columns'][$c_key] = $c_value;
-		    			$this->final_action[$t_key]['columns'][$c_key]['action'] = 'delete';
+                        $this->final_action[$t_key]['action']['t_delete'] = true; // Make sure to tell parent table there are changes inside
+                        $this->final_action[$t_key]['columns'][$c_key] = $c_value;
+                        $this->final_action[$t_key]['columns'][$c_key]['action']['c_delete'] = true;
+                        $this->num_deletes++;
 		    		}
 		    	}
     		}
@@ -275,7 +302,9 @@ class Dbsync {
     	foreach($this->itis_tables as $t_key => $t_value) {
     		if(!isset($this->want_tables[$t_key])) {
     			$this->final_action[$t_key] = $t_value;
-    			$this->final_action[$t_key]['action'] = 'delete';
+                $this->final_action[$t_key]['action'] = $this->blank_table_actions;
+                $this->final_action[$t_key]['action']['t_delete'] = true;
+                $this->num_deletes++;
     		}
     	}
 

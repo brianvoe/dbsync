@@ -1,0 +1,135 @@
+html {
+    font-size: 100%;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+}
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    color: #333333;
+    background-color: #ffffff;
+}
+.container {
+    margin: 20px;
+    *zoom: 1;
+}
+.header {
+    width: auto;
+    height: 65px;
+    border-bottom: solid 1px #999999;
+}
+.header_shadow {
+    height: 28px;
+    background-color: #ffffff;
+    background-image: url('header_shadow.png');
+    background-position: top center;
+    background-repeat: no-repeat;
+}
+.groupcontainer {
+    float: left;
+    width: auto;
+    margin-right: 25px;
+    padding-right: 25px;
+    border-right: solid 1px #999999;
+}
+.groupcontainer:last-child {
+    margin-right: 0px;
+    padding-right: 0px;
+    border-right: none;
+}
+.tablecontainer {
+    padding-bottom: 5px;
+}
+.tablename {
+    cursor: pointer;
+    display: inline-block;
+    font-size: 22px;
+    font-weight: bold;
+}
+.tablename:hover {
+    text-decoration: underline;
+}
+.columncontainer {
+    display: none;
+    padding: 0px 0px 5px 15px;
+}
+.columnname {
+    cursor: pointer;
+    font-size: 16px;
+}
+.columnname:hover {
+    text-decoration: underline;
+}
+.attrcontainer{
+    display: none;
+    padding: 0px 0px 10px 15px;
+}
+.attrname {font-size: 14px;}
+
+/* Needs items */
+.needslist {
+    margin: 0 auto;
+    width: 350px;
+    text-align: center;
+}
+.needstoadd {color:green;}
+.needstochange {color: orange;}
+.needstodelete {color: red;}
+
+/* Misc */
+h1{
+    font-size: 36px;
+    line-height: 40px;
+    margin: 10px 0 0 0;
+    font-family: inherit;
+    font-weight: bold;
+    color: inherit;
+    text-rendering: optimizelegibility;
+}
+h1 .green {color: #2D9933;}
+h4 {
+    font-size: 14px;
+    margin: 0;
+    font-family: inherit;
+    color: inherit;
+    text-rendering: optimizelegibility;
+}
+.width50{width: 50px;}
+.width75{width: 75px;}
+.width100{width: 100px;}
+.width110{width: 110px;}
+.width150{width: 150px;}
+.inline{display: inline-block;}
+.clear {clear: both;}
+.center {text-align: center;}
+/* Color Circles */
+.greencircle {
+    display: none;
+    margin: 0 0 0 2px;
+    background-color: green;
+    height: 10px;
+    width: 10px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+}
+.orangecircle {
+    display: none;
+    margin: 0 0 0 2px;
+    background-color: orange;
+    height: 10px;
+    width: 10px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+}
+.redcircle {
+    display: none;
+    margin: 0 0 0 2px;
+    background-color: red;
+    height: 10px;
+    width: 10px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+}
