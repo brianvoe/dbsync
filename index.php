@@ -19,12 +19,25 @@ $final_list = $dbsync->compile_compare();
         <link rel="stylesheet" href="resources/main.css" />
         <script>
 	        $(document).ready(function(){
-	        	$('.tablename, .columnname').click(function(){
-	                var nextitem = $(this).next('div');
+	        	$('.tablename').click(function(){
+	        		var t_this = $(this);
+	                var nextitem = t_this.next('div');
 	                if(nextitem.is(":visible")){
-	                    nextitem.hide('fast');
+	                	nextitem.find('div.attrcontainer').each(function(index) {
+							$(this).hide('fast');
+						});
+						setTimeout(function(){
+	                    	nextitem.hide('fast');
+						}, 100);
 	                } else {
 	                    nextitem.show('fast');
+	                    setTimeout(function(){
+	                    	var animationtime = 75;
+		                    nextitem.find('div.attrcontainer').each(function(index) {
+								$(this).delay(animationtime).show('fast');
+								animationtime += 75;
+							});
+						}, 100);
 	                }
 	            });
 	        });
@@ -39,9 +52,9 @@ $final_list = $dbsync->compile_compare();
     	<div class="needslist">
     		<h4>What needs to happen:</h4>
     		<?php if($dbsync->num_adds != 0 || $dbsync->num_changes != 0 || $dbsync->num_deletes != 0): ?>
-                <span class="needstoadd"><?php echo $dbsync->num_adds; ?> Additions</span>
-                <span class="needstochange"><?php echo $dbsync->num_changes; ?> Changes</span>
-                <span class="needstodelete"><?php echo $dbsync->num_deletes; ?> Deletions</span>
+                <span class="add"><?php echo $dbsync->num_adds; ?> Additions</span>
+                <span class="change"><?php echo $dbsync->num_changes; ?> Changes</span>
+                <span class="delete"><?php echo $dbsync->num_deletes; ?> Deletions</span>
             <?php else: ?>
                 <div class="needstoadd">nothing</div>
             <?php endif; ?>
@@ -52,34 +65,17 @@ $final_list = $dbsync->compile_compare();
 	    			<?php $cur_group_num = 1;  ?>
 		    		<?php foreach($final_list as $t_key => $t_value): ?>
 		    			<div class="tablecontainer">
-		    				<?php echo '<pre>'; print_r($t_value); echo '</pre>'; ?>
-		    				<div class="tablename"><?php echo $t_key; ?></div>
-		    				<div class="columncontainer">
+		    				<?php //echo '<pre>'; print_r($t_value); echo '</pre>'; ?>
+		    				<div class="tablename <?php echo $t_value['action']; ?>">
+		    					<?php echo $t_key; ?>
+		    					<?php echo $dbsync->set_table_changes($t_value); ?>
+		    				</div>
+		    				<div class="columncontainer <?php echo $t_value['action']; ?>">
+		    					<?php echo (isset($t_value['notes']) ? '<div class="tablenotes"><strong>Notes:</strong> '.$t_value['notes'].'</div>': ''); ?>
 		    					<?php foreach($t_value['columns'] as $c_key => $c_value): ?>
-		    						<div class="columnname"><?php echo $c_key; ?></div>
-		    						<div class="attrcontainer">
-		    							<div class="attrname"><div class="width110 inline">Type:</div> <?php echo strtoupper($c_value['type']); ?></div>
-		    							<?php if($c_value['constraint']): ?>
-		    								<div class="attrname"><div class="width110 inline">Constraint:</div> <?php echo $c_value['constraint']; ?></div>
-		    							<?php endif; ?>
-		    							<?php if($c_value['default']): ?>
-		    								<div class="attrname"><div class="width110 inline">Default:</div> <?php echo $c_value['default']; ?></div>
-		    							<?php endif; ?>
-		    							<?php if($c_value['primary']): ?>
-		    								<div class="attrname"><div class="width110 inline">Primary:</div> <?php echo ($c_value['primary'] ? 'True': 'False'); ?></div>
-		    							<?php endif; ?>
-		    							<?php if($c_value['index']): ?>
-		    								<div class="attrname"><div class="width110 inline">Index:</div> <?php echo ($c_value['index'] ? 'True': 'False'); ?></div>
-		    							<?php endif; ?>
-		    							<?php if($c_value['unique']): ?>
-		    								<div class="attrname"><div class="width110 inline">Unique:</div> <?php echo ($c_value['unique'] ? 'True': 'False'); ?></div>
-		    							<?php endif; ?>
-		    							<?php if($c_value['auto_increment']): ?>
-		    								<div class="attrname"><div class="width110 inline">Auto Increment:</div> <?php echo ($c_value['auto_increment'] ? 'True': 'False'); ?></div>
-		    							<?php endif; ?>
-		    							<?php if($c_value['null']): ?>
-		    								<div class="attrname"><div class="width110 inline">Null:</div> <?php echo ($c_value['null'] ? 'True': 'False'); ?></div>
-		    							<?php endif; ?>
+		    						<div class="columnname <?php echo $c_value['action']; ?>"><?php echo $c_key; ?></div>
+		    						<div class="attrcontainer <?php echo ($c_value['action'] != 'change' ? $c_value['action']: ''); ?>">
+		    							<?php echo $dbsync->set_attr_text($c_value); ?>
 		    						</div>
 		    					<?php endforeach; ?>
 		    				</div>

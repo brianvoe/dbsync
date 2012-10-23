@@ -64,14 +64,6 @@ class Dbsync {
 		'auto_increment' => false,
 		'null' => false
 	);
-    public $blank_table_actions = array(
-        't_add' => false, 't_change' => false, 't_delete' => false,
-        'c_add' => false, 'c_change' => false, 'c_delete' => false
-    );
-    public $blank_column_actions = array(
-        'c_add' => false, 'c_change' => false, 'c_delete' => false,
-        'a_add' => false, 'a_change' => false, 'a_delete' => false
-    );
 
     // Usable Variables
     public $num_adds = 0;
@@ -245,11 +237,11 @@ class Dbsync {
     	foreach($this->want_tables as $t_key => $t_value) {
             // Add want tables to final_action
             $this->final_action[$t_key] = $t_value;
-            $this->final_action[$t_key]['action'] = $this->blank_table_actions;
+            $this->final_action[$t_key]['action'] = 'none';
 
     		if(!isset($this->itis_tables[$t_key])) {
     			// want_tables is not in itis_tables, need to add it
-    			$this->final_action[$t_key]['action']['t_add'] = true;
+    			$this->final_action[$t_key]['action'] = 'add';
                 $this->num_adds++;
     		} else {
     			// Does exists lets check to see if we need to add anything
@@ -258,12 +250,12 @@ class Dbsync {
     			foreach($this->want_tables[$t_key]['columns'] as $c_key => $c_value) {
                     // Add want tables columns to current table
                     $this->final_action[$t_key]['columns'][$c_key] = $c_value;
-                    $this->final_action[$t_key]['columns'][$c_key]['action'] = $this->blank_column_actions;
+                    $this->final_action[$t_key]['columns'][$c_key]['action'] = 'none';
+                    $this->final_action[$t_key]['columns'][$c_key]['action_list'] = array();
 
     				if(!isset($this->itis_tables[$t_key]['columns'][$c_key])) {
     					// want_tables column is not in itis_tables column, need to add it
-                        $this->final_action[$t_key]['action']['c_add'] = true; // Tell parent table there are c_add's
-    					$this->final_action[$t_key]['columns'][$c_key]['action']['c_add'] = true;
+    					$this->final_action[$t_key]['columns'][$c_key]['action'] = 'add';
                         $this->num_adds++;
     				} else {
     					// want_tables column does exists in itis_tables column, lets check column attributes
@@ -272,15 +264,17 @@ class Dbsync {
     					$want_column_info = $this->want_tables[$t_key]['columns'][$c_key];
     					$itis_column_info = $this->itis_tables[$t_key]['columns'][$c_key];
 
+                        $a_changes = array();
     					foreach($want_column_info as $a_key => $a_value) {
     						if(strtolower($a_value) !== strtolower($itis_column_info[$a_key])) {
-                                $this->final_action[$t_key]['columns'][$c_key]['action']['a_change'] = true;
+                                array_push($a_changes, $a_key);
+                                $this->final_action[$t_key]['columns'][$c_key]['action'] = 'change';
                                 $this->num_changes++;
     						}
     					}
+                        $this->final_action[$t_key]['columns'][$c_key]['action_list'] = $a_changes;
 
-                        if($this->final_action[$t_key]['columns'][$c_key]['action']['a_change'] == true) {
-                            $this->final_action[$t_key]['columns'][$c_key]['action']['c_change'] = true;
+                        if($this->final_action[$t_key]['columns'][$c_key]['action'] == 'change') {
                             $this->final_action[$t_key]['columns'][$c_key]['itis'] = $itis_column_info;
                         }
     				}
@@ -289,9 +283,9 @@ class Dbsync {
     			// Loop through itis table columns to see if we need to delete any
 		    	foreach($this->itis_tables[$t_key]['columns'] as $c_key => $c_value) {
 		    		if(!isset($this->want_tables[$t_key]['columns'][$c_key])) {
-                        $this->final_action[$t_key]['action']['t_delete'] = true; // Make sure to tell parent table there are changes inside
                         $this->final_action[$t_key]['columns'][$c_key] = $c_value;
-                        $this->final_action[$t_key]['columns'][$c_key]['action']['c_delete'] = true;
+                        $this->final_action[$t_key]['columns'][$c_key]['action'] = 'delete';
+                        $this->final_action[$t_key]['columns'][$c_key]['action_list'] = array();
                         $this->num_deletes++;
 		    		}
 		    	}
@@ -302,16 +296,117 @@ class Dbsync {
     	foreach($this->itis_tables as $t_key => $t_value) {
     		if(!isset($this->want_tables[$t_key])) {
     			$this->final_action[$t_key] = $t_value;
-                $this->final_action[$t_key]['action'] = $this->blank_table_actions;
-                $this->final_action[$t_key]['action']['t_delete'] = true;
+                $this->final_action[$t_key]['action'] = 'delete';
                 $this->num_deletes++;
     		}
     	}
 
     	// Uncomment to view final itis table
-		echo '<pre>';
-		print_r($this->final_action);
-		echo '</pre>';
+		// echo '<pre>';
+		// print_r($this->final_action);
+		// echo '</pre>';
+    }
+
+    // Place markers next to table to say whether or not
+    function set_table_changes($t_value) {
+        // Set variables
+        $return_txt = '';
+        $add = false;
+        $change = false;
+        $delete = false;
+
+        // Loop through columns in table
+        foreach($t_value['columns'] as $c_key => $c_value) {
+            if(isset($c_value['action']) ) {
+                if($c_value['action'] == 'add'){
+                    $add = true;
+                } else if($c_value['action'] == 'change') {
+                    $change = true;
+                } else if($c_value['action'] == 'delete') {
+                    $delete = true;
+                }
+            }
+        }
+
+        // Add markers if they are true
+        if($add){
+            $return_txt .= '<div class="greencircle"></div>';
+        }
+        if($change) {
+            $return_txt .= '<div class="orangecircle"></div>';
+        }
+        if($delete) {
+            $return_txt .= '<div class="redcircle"></div>';
+        }
+
+        return $return_txt;
+    }
+
+    // Loop through attributes and check for changes
+    function set_attr_text($c_value) {
+        // Uncommment to see each array next to each column
+        // echo '<pre>'; print_r($c_value); echo '</pre>';
+
+        // Set return variable
+        $return_txt = '';
+
+        // Type
+        if(isset($c_value['action']) && $c_value['action'] == 'change' && in_array('type', $c_value['action_list'])) {
+            $return_txt .= '<div class="attrname change"><div class="width80 inline">Type:</div> '.strtoupper($c_value['itis']['type']).' to '.strtoupper($c_value['type']).'</div>';
+        } else if($c_value['type']) {
+            $return_txt .= '<div class="attrname"><div class="width80 inline">Type:</div> '.strtoupper($c_value['type']).'</div>';
+        }
+
+        // Constraint
+        if(isset($c_value['action']) && $c_value['action'] == 'change' && in_array('constraint', $c_value['action_list'])) {
+            $return_txt .= '<div class="attrname change"><div class="width80 inline">Constraint:</div> '.$c_value['itis']['constraint'].' to '.$c_value['constraint'].'</div>';
+        } else if($c_value['constraint']) {
+            $return_txt .= '<div class="attrname"><div class="width80 inline">Constraint:</div> '.$c_value['constraint'].'</div>';
+        }
+
+        // Default
+        if(isset($c_value['action']) && $c_value['action'] == 'change' && in_array('default', $c_value['action_list'])) {
+            $return_txt .= '<div class="attrname change"><div class="width80 inline">Default:</div> '.$c_value['itis']['default'].' to '.$c_value['default'].'</div>';
+        } else if($c_value['default']) {
+            $return_txt .= '<div class="attrname"><div class="width80 inline">Default:</div> '.$c_value['default'].'</div>';
+        }
+
+        // Primary
+        if(isset($c_value['action']) && $c_value['action'] == 'change' && in_array('primary', $c_value['action_list'])) {
+            $return_txt .= '<div class="attrname change"><div class="width80 inline">Primary:</div> '.($c_value['itis']['primary'] ? 'true': 'false').' to '.($c_value['primary'] ? 'true': 'false').'</div>';
+        } else if($c_value['primary']) {
+            $return_txt .= '<div class="attrname"><div class="width80 inline">Primary:</div> '.($c_value['primary'] ? 'true': 'false').'</div>';
+        }
+
+        // Index
+        if(isset($c_value['action']) && $c_value['action'] == 'change' && in_array('index', $c_value['action_list'])) {
+            $return_txt .= '<div class="attrname change"><div class="width80 inline">Index:</div> '.($c_value['itis']['index'] ? 'true': 'false').' to '.($c_value['index'] ? 'true': 'false').'</div>';
+        } else if($c_value['index']) {
+            $return_txt .= '<div class="attrname"><div class="width80 inline">Index:</div> '.($c_value['index'] ? 'true': 'false').'</div>';
+        }
+
+        // Unique
+        if(isset($c_value['action']) && $c_value['action'] == 'change' && in_array('unique', $c_value['action_list'])) {
+            $return_txt .= '<div class="attrname change"><div class="width80 inline">Unique:</div> '.($c_value['itis']['unique'] ? 'true': 'false').' to '.($c_value['unique'] ? 'true': 'false').'</div>';
+        } else if($c_value['unique']) {
+            $return_txt .= '<div class="attrname"><div class="width80 inline">Unique:</div> '.($c_value['unique'] ? 'true': 'false').'</div>';
+        }
+
+        // Auto Increment
+        if(isset($c_value['action']) && $c_value['action'] == 'change' && in_array('auto_increment', $c_value['action_list'])) {
+            $return_txt .= '<div class="attrname change"><div class="width80 inline">Auto Incr:</div> '.($c_value['itis']['auto_increment'] ? 'true': 'false').' to '.($c_value['auto_increment'] ? 'true': 'false').'</div>';
+        } else if($c_value['auto_increment']) {
+            $return_txt .= '<div class="attrname"><div class="width80 inline">Auto Incr:</div> '.($c_value['auto_increment'] ? 'true': 'false').'</div>';
+        }
+
+        // Null
+        if(isset($c_value['action']) && $c_value['action'] == 'change' && in_array('null', $c_value['action_list'])) {
+            $return_txt .= '<div class="attrname change"><div class="width80 inline">Null:</div> '.($c_value['itis']['null'] ? 'true': 'false').' to '.($c_value['null'] ? 'true': 'false').'</div>';
+        } else if($c_value['null']) {
+            $return_txt .= '<div class="attrname"><div class="width80 inline">Null:</div> '.($c_value['null'] ? 'true': 'false').'</div>';
+        }
+        
+        return $return_txt;
     }
 
     //////////////////////////////////

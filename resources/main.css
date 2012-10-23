@@ -43,6 +43,9 @@ body {
 .tablecontainer {
     padding-bottom: 5px;
 }
+.tablecontainer .add {color: green;}
+.tablecontainer .change {color: orange;}
+.tablecontainer .delete {color: red;}
 .tablename {
     cursor: pointer;
     display: inline-block;
@@ -52,21 +55,25 @@ body {
 .tablename:hover {
     text-decoration: underline;
 }
+.tablenotes {
+    font-size: 12px;
+    max-width: 250px;
+    padding-bottom: 5px;
+}
 .columncontainer {
     display: none;
     padding: 0px 0px 5px 15px;
 }
 .columnname {
-    cursor: pointer;
     font-size: 16px;
-}
-.columnname:hover {
-    text-decoration: underline;
 }
 .attrcontainer{
     display: none;
     padding: 0px 0px 10px 15px;
 }
+.attrcontainer .add {color: green;}
+.attrcontainer .change {color: orange;}
+.attrcontainer .delete {color: red;}
 .attrname {font-size: 14px;}
 
 /* Needs items */
@@ -75,9 +82,10 @@ body {
     width: 350px;
     text-align: center;
 }
-.needstoadd {color:green;}
-.needstochange {color: orange;}
-.needstodelete {color: red;}
+.needslist .add {color: green;}
+.needslist .change {color: orange;}
+.needslist .delete {color: red;}
+
 
 /* Misc */
 h1{
@@ -99,6 +107,7 @@ h4 {
 }
 .width50{width: 50px;}
 .width75{width: 75px;}
+.width80{width: 80px;}
 .width100{width: 100px;}
 .width110{width: 110px;}
 .width150{width: 150px;}
@@ -107,7 +116,7 @@ h4 {
 .center {text-align: center;}
 /* Color Circles */
 .greencircle {
-    display: none;
+    display: inline-block;
     margin: 0 0 0 2px;
     background-color: green;
     height: 10px;
@@ -116,7 +125,7 @@ h4 {
     -webkit-border-radius: 5px;
 }
 .orangecircle {
-    display: none;
+    display: inline-block;
     margin: 0 0 0 2px;
     background-color: orange;
     height: 10px;
@@ -125,7 +134,7 @@ h4 {
     -webkit-border-radius: 5px;
 }
 .redcircle {
-    display: none;
+    display: inline-block;
     margin: 0 0 0 2px;
     background-color: red;
     height: 10px;
