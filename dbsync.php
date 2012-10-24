@@ -34,17 +34,24 @@ class Dbsync {
     private $username = 'root';
     private $password = '';
     private $database = 'dbsync';
-
-	// Settings variables
-	public $set_path = 'dbtables'; // Location to settings files
-	public $end_file_name = ''; // If needing to append text to file name
-	public $end_var_name = '_columns'; // Appended text for var array name in individual table file 
     public $engine_type = 'InnoDB'; // Set engine type
+    public $char_set = 'utf8'; // Set collation type
     public $collation = 'utf8_bin'; // Set collation type
 
-    /////////////////////
-    // Class Variables //
-    /////////////////////
+    // Settings variables
+    public $allow_deletion = false; // By default table deletions are turned off for possible oopsy mistake alleviations
+    public $set_path = 'dbtables'; // Location to settings files
+    public $end_file_name = ''; // If needing to append text to file name
+    public $end_var_name = '_columns'; // Appended text for var array name in individual table file
+    public $num_per_column = 20; // How many tables to show for each column on frontend
+    //////////////////
+    // End Settings //
+    //////////////////
+
+
+    ////////////////////////
+    // In Class Variables //
+    ////////////////////////
     // Comparison arrays for before and after
     public $want_tables = array(); // What we want the db to be
     public $itis_tables = array(); // What is currently is
@@ -122,7 +129,7 @@ class Dbsync {
 
     	if (file_exists($this->set_path.'/_tables.php')) {
     		// Include primary tables file
-		    include_once $this->set_path.'/_tables.php';
+		    include $this->set_path.'/_tables.php';
 
 		    // Run through primary tables array
 	    	foreach($_tables as $key => $value) {
@@ -138,7 +145,7 @@ class Dbsync {
 		    		// Set file modified date
 		    		$this->want_tables[$key]['modified'] = date ("Y-m-d H:i:s", filemtime($this->set_path.'/'.$filename));
 
-	    			include_once $this->set_path.'/'.$key.$this->end_file_name.'.php';
+	    			include $this->set_path.'/'.$key.$this->end_file_name.'.php';
 	    			if(isset(${$key.$this->end_var_name})){
 	    				$columns = ${$key.$this->end_var_name};
 
@@ -156,6 +163,7 @@ class Dbsync {
 					array_push($errors, 'The file <strong>'.$filename.'</strong> does not exist. Add file <strong>'.$filename.'</strong> to <strong>'.$this->set_path.'</strong> folder');
 				}
 	    	}
+            unset($_tables); // Unset table variable after use
 		} else {
 		    array_push($errors, 'Could not locate primary tables file <strong>_tables.php</strong> in <strong>'.$this->set_path.'</strong> folder.');
 		}
@@ -330,13 +338,13 @@ class Dbsync {
 
         // Add markers if they are true
         if($add){
-            $return_txt .= '<div class="greencircle"></div>';
+            $return_txt .= '<div class="add"></div>';
         }
         if($change) {
-            $return_txt .= '<div class="orangecircle"></div>';
+            $return_txt .= '<div class="change"></div>';
         }
         if($delete) {
-            $return_txt .= '<div class="redcircle"></div>';
+            $return_txt .= '<div class="delete"></div>';
         }
 
         return $return_txt;
@@ -412,7 +420,46 @@ class Dbsync {
     //////////////////////////////////
     // Primary alteration fucntions //
     //////////////////////////////////
-    function create_tables() {
+    function process_add($final) {
+        // Loop through and process tables only
+        foreach($final as $t_key => $t_value) {
+            // echo '<pre>'; print_r($t_value); echo '</pre>';
+            if($t_value['action'] == 'add') {
+                // Set variables
+                $columns = array();
+
+                // Loop through columns and put together array
+                foreach($t_value['columns'] as $c_key => $c_value) {
+                    $c_txt = '`'.$c_key.'` '.strtoupper($c_value['type']).($c_value['constraint'] ? '('.$c_value['constraint'].')': '').' ';
+                    array_push($columns, $c_txt);
+                }
+
+                // Add columns to table database
+                $sql = 'CREATE TABLE `'.$t_key.'`(';
+                $sql .= implode(', ', $columns);
+                $sql .= ') CHARACTER SET '.$this->char_set.' COLLATE '.$this->collation;
+                echo $sql.'<br />';
+
+                // $sql = "CREATE TABLE `users` (
+                // `id` INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                // `name` VARCHAR(25) NOT NULL,
+                // `pass` VARCHAR(18) NOT NULL,
+                // `email` VARCHAR(45),
+                // `reg_date` TIMESTAMP
+                // ) CHARACTER SET utf8 COLLATE utf8_general_ci";
+            }
+        }
+
+
+        // Loop through and process columns only
+
+    }
+
+    function process_change($final) {
+
+    }
+
+    function process_delete($final) {
 
     }
 }

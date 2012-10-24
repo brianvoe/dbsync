@@ -17,7 +17,6 @@ body {
     *zoom: 1;
 }
 .header {
-    width: auto;
     height: 65px;
     border-bottom: solid 1px #999999;
 }
@@ -41,7 +40,7 @@ body {
     border-right: none;
 }
 .tablecontainer {
-    padding-bottom: 5px;
+    margin-bottom: 5px;
 }
 .tablecontainer .add {color: green;}
 .tablecontainer .change {color: orange;}
@@ -54,6 +53,33 @@ body {
 }
 .tablename:hover {
     text-decoration: underline;
+}
+.tablename .add {
+    display: inline-block;
+    margin: 0 0 0 2px;
+    background-color: green;
+    height: 10px;
+    width: 10px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+}
+.tablename .change {
+    display: inline-block;
+    margin: 0 0 0 2px;
+    background-color: orange;
+    height: 10px;
+    width: 10px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+}
+.tablename .delete {
+    display: inline-block;
+    margin: 0 0 0 2px;
+    background-color: red;
+    height: 10px;
+    width: 10px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
 }
 .tablenotes {
     font-size: 12px;
@@ -76,16 +102,103 @@ body {
 .attrcontainer .delete {color: red;}
 .attrname {font-size: 14px;}
 
-/* Needs items */
-.needslist {
-    margin: 0 auto;
-    width: 350px;
-    text-align: center;
+/* Action items */
+.actions {
+    margin: 0 20px 0 20px;
 }
-.needslist .add {color: green;}
-.needslist .change {color: orange;}
-.needslist .delete {color: red;}
+.actions .status {
+    float: left;
+    text-align: center;
+    padding: 0 10px 0 10px;
+    width: 270px;
+    height: 50px;
+    border-right: solid 1px #999999;
+}
+.actions .status .add {color: green;}
+.actions .status .change {color: orange;}
+.actions .status .delete {color: red;}
+.actions .showhide {
+    float: left;
+    text-align: center;
+    padding: 0 10px 0 10px;
+    width: 220px;
+    height: 50px;
+    border-right: solid 1px #999999;
+}
+.actions .showhide .items span {
+    margin: 0 8px 0 8px;
+    cursor: pointer;
+}
+.actions .showhide .items span:hover {
+    text-decoration: underline;
+}
+.actions .showhide .items span.all {color: blue;}
+.actions .showhide .items span.add {color: green;}
+.actions .showhide .items span.change {color: orange;}
+.actions .showhide .items span.delete {color: red;}
+.actions .showhide .items span {
+    margin: 0 8px 0 8px;
+    cursor: pointer;
+}
+.actions .process {
+    float: left;
+    text-align: center;
+    padding: 0 10px 0 10px;
+    width: 280px;
+    height: 50px;
+    border-right: solid 1px #999999;
+}
+.actions .process .items span.all {font-weight: bold; color: blue;}
+.actions .process .items span.add {font-weight: bold; color: green;}
+.actions .process .items span.change {font-weight: bold; color: orange;}
+.actions .process .items span.delete {font-weight: bold; color: red;}
+.actions .process .items span {
+    margin: 0 4px 0 4px;
+    padding: 5px 8px 5px 8px;
+    cursor: pointer;
+    border-radius: 8px; 
+    -moz-border-radius: 8px; 
+    -webkit-border-radius: 8px; 
+    border: 1px solid #999999;
+}
+.actions .process .items span:hover {
+    text-decoration: underline;
+}
+.actions .setup {
+    float: left;
+    text-align: center;
+    padding: 0 10px 0 10px;
+    width: 150px;
+    height: 50px;
+    border-right: solid 1px #999999;
+}
+.actions .setup .click {
+    cursor: pointer;
+    color: green;
+}
+#setup {
+    display: none;
+    margin: 20px 0px 20px 100px;
+}
+#setup .title {
 
+}
+.actions .hints {
+    float: left;
+    text-align: center;
+    padding: 0 10px 0 10px;
+    width: 150px;
+    height: 50px;
+    border-right: solid 1px #999999;
+}
+.actions .hints .click {
+    cursor: pointer;
+    color: green;
+}
+#hints {
+    display: none;
+    margin: 20px 0px 20px 100px;
+}
 
 /* Misc */
 h1{
@@ -98,6 +211,13 @@ h1{
     text-rendering: optimizelegibility;
 }
 h1 .green {color: #2D9933;}
+h3 {
+    font-size: 18px;
+    margin: 0;
+    font-family: inherit;
+    color: inherit;
+    text-rendering: optimizelegibility;
+}
 h4 {
     font-size: 14px;
     margin: 0;
@@ -114,31 +234,20 @@ h4 {
 .inline{display: inline-block;}
 .clear {clear: both;}
 .center {text-align: center;}
-/* Color Circles */
-.greencircle {
-    display: inline-block;
-    margin: 0 0 0 2px;
-    background-color: green;
-    height: 10px;
-    width: 10px;
-    -moz-border-radius: 5px;
-    -webkit-border-radius: 5px;
+
+ul,
+ol {
+  padding: 0;
+  margin: 0 0 10px 40px;
 }
-.orangecircle {
-    display: inline-block;
-    margin: 0 0 0 2px;
-    background-color: orange;
-    height: 10px;
-    width: 10px;
-    -moz-border-radius: 5px;
-    -webkit-border-radius: 5px;
+
+ul ul,
+ul ol,
+ol ol,
+ol ul {
+  margin-bottom: 0;
 }
-.redcircle {
-    display: inline-block;
-    margin: 0 0 0 2px;
-    background-color: red;
-    height: 10px;
-    width: 10px;
-    -moz-border-radius: 5px;
-    -webkit-border-radius: 5px;
+
+li {
+  line-height: 20px;
 }
