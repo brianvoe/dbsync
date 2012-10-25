@@ -38,7 +38,7 @@ $dbsync->db_close();
 		<META HTTP-EQUIV="Expires" CONTENT="-1">
         <title>Welcome to Database Sync</title>
         <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
-        <link rel="stylesheet" href="resources/main.css" />
+        <link rel="stylesheet" href="main.css" />
         <script>
 	        $(document).ready(function(){
 	        	// Show and hide tables 
@@ -222,10 +222,9 @@ $dbsync->db_close();
     </head>
     <body>
     	<div class="header">
-    		<h1 class="center">DB<span class="green">sync</span></h1>
-    		<h4 class="center">Mysql Database Syncing Class</h4>
+    		<h1>DB<span class="green">sync</span></h1>
+    		<h4>PHP Mysql Database Syncing Class</h4>
     	</div>
-    	<div class="header_shadow"></div>
     	<div class="actions">
     		<div class="status">
 	    		<h4>What Needs to Happen:</h4>
@@ -234,7 +233,7 @@ $dbsync->db_close();
 	                <span class="change"><?php echo $dbsync->num_changes; ?> Changes</span> - 
 	                <span class="delete"><?php echo $dbsync->num_deletes; ?> Deletions</span>
 	            <?php else: ?>
-	                <div class="needstoadd">nothing</div>
+	                <div class="add"><strong>nothing</strong></div>
 	            <?php endif; ?>
 	        </div>
 	        <div class="process">
@@ -270,6 +269,8 @@ $dbsync->db_close();
 	        	<div class="click">Click to View</div>
 	        </div>
     	</div>
+    	<div class="clear"></div>
+    	<?php echo (!empty($dbsync->sql_errors) ? '<div class="errormessage">'.implode('<br />', $dbsync->sql_errors).'</div>': '') ?>
     	<div class="clear"></div>
     	<div id="setup">
     		<h3 style="padding: 0 0 10px 0;">Installation and Setup</h3>
@@ -338,11 +339,15 @@ $dbsync->db_close();
     		<ol>
     			<li>If you are worried about <strong>ANYTHING</strong> at all, use this as a guide as to things that need to be done only.</li>
     			<li>When making changes to columns in tables that have a lot of data in them, be aware you may get a PHP timeout error.</li>
+    			<li>When setting auto increment to a column ensure you have primary set as well.</li>
+    			<li>If you get an error, its an error from php mysqli->error text. If not descriptive enough, process what you can and try to minize it to a specific table.</li>
     			<li>Ensure if you change a column type from one type to another that the data in the column will translate over properly.</li>
     			<li>To ensure additional database security remove database connection settings after running processes.</li>
     		</ol>
     		<strong>Minor</strong>
     		<ol>
+    			<li>Alphabetize your tables in your _tables.php file.</li>
+    			<li>Organize your columns in the order in which you want them set in mysql.</li>
     			<li>Check tables for notes before processing there may be something important noted.</li>
     			<li>Click on table name to pull down its column information.</li>
     			<li>The circles next to table names indicates that there are changes that need to happen to columns in table.</li>
