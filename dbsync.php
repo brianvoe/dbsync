@@ -1,28 +1,12 @@
 <?php 
 
-////////////////////////
-///// Instructions /////
-////////////////////////
-// Add and Remove Database Tables below in the $dbtables array
-/* - Create New tables -
- * In helpers/db_tables folder add {tablename}_helper.php
- * Inside that file create the function called {tablename}_columns(){}
- * Create your array variable and return the variable back
- */
-
-/* - Create or Edit Columns
- * Inside your array variable Add your columns
- * Keep them in the order you want for the database
-  '{columnname}' => array(
-  'type' => 'INT', // Insert Type
-  'constraint' => 11, // Optional - Insert Constraint for types that need it
-  'primary' => '1', // Optional - If primary 0 for no 1 for yes - default is 0
-  'auto_increment' => TRUE, // Optional - If column needs to auto increment set to TRUE - id usually should be auto incremented
-  'index' => '1', // Optional - If you would like to index this column set to 1
-  'default' => '{defaultvalue}', // Optional - Insert default value
-  'null' => false, Optional - default if false
-  ),
- */
+/*
+  PHP Mysql Database Syncing Class
+  Copyright (c) 2012 Brian Voelker (webiswhatido.com)
+  Licensed under GPLv3
+  http://www.opensource.org/licenses/gpl-3.0.html
+  Version: 1
+*/
 
 class Dbsync {
 	//////////////
@@ -57,6 +41,9 @@ class Dbsync {
     public $itis_tables = array(); // What is currently is
     public $final_action = array(); // Final list of actions that need to happen
 
+    // Return errors
+    public $sql_errors = array();
+
     // Blank preset arrays
     public $blank_table = array(
 
@@ -89,6 +76,14 @@ class Dbsync {
 		if ($this->mysqli->connect_error) {
 		    die('Connect Error (' . $this->mysqli->connect_errno . ') ' . $this->mysqli->connect_error);
 		}
+    }
+
+    function db_query($query) {
+        $result = $this->mysqli->query($query);
+        if($this->mysqli->error){
+            array_push($this->sql_errors, $this->mysqli->error);
+        }
+        return $result;
     }
 
     function db_close() {
@@ -190,14 +185,14 @@ class Dbsync {
     	$errors = array();
 
     	// Start by querying current list of tables in database
-    	$tables = $this->mysqli->query("SHOW TABLES FROM $this->database");
+    	$tables = $this->db_query("SHOW TABLES FROM $this->database");
 		if($tables->num_rows > 0) {
 			while($t_info = $tables->fetch_object()) {
 				$table_name = $t_info->Tables_in_dbsync;
 				$this->itis_tables[$table_name] = array('columns' => array());
 
 				// Go grab columns in database
-				$columns = $this->mysqli->query("SHOW COLUMNS FROM $table_name");
+				$columns = $this->db_query("SHOW COLUMNS FROM $table_name");
 				if($columns->field_count > 0) {
 					while($c_info = $columns->fetch_object()) {
 						$field = $this->get_type_constraint($c_info->Type);
@@ -219,6 +214,7 @@ class Dbsync {
 						// echo '</pre>';
 					}
 				}
+
 				mysqli_free_result($columns); // Always free results after query
 			}
 		}
@@ -431,36 +427,148 @@ class Dbsync {
                 // Loop through columns and put together array
                 foreach($t_value['columns'] as $c_key => $c_value) {
                     $c_txt = '`'.$c_key.'` '.strtoupper($c_value['type']).($c_value['constraint'] ? '('.$c_value['constraint'].')': '').' ';
-                    array_push($columns, $c_txt);
+                    $c_txt .= ($c_value['default'] ? "DEFAULT '".$c_value['default']."' ": '');
+                    $c_txt .= ($c_value['null'] ? 'NULL ': 'NOT NULL ');
+                    $c_txt .= ($c_value['auto_increment'] ? 'AUTO_INCREMENT ': '');
+                    
+                    array_push($columns, trim($c_txt));
+                }
+
+                // Loop through columns and put together array
+                foreach($t_value['columns'] as $c_key => $c_value) {
+                    if($c_value['primary']) {
+                        array_push($columns, 'PRIMARY KEY ('.$c_key.')');
+                    }
+
+                    if($c_value['index']) {
+                        array_push($columns, 'INDEX ('.$c_key.')');
+                    }
+
+                    if($c_value['unique']) {
+                        array_push($columns, 'UNIQUE ('.$c_key.')');
+                    }
                 }
 
                 // Add columns to table database
                 $sql = 'CREATE TABLE `'.$t_key.'`(';
                 $sql .= implode(', ', $columns);
-                $sql .= ') CHARACTER SET '.$this->char_set.' COLLATE '.$this->collation;
-                echo $sql.'<br />';
+                $sql .= ') ENGINE='.$this->engine_type.' CHARACTER SET '.$this->char_set.' COLLATE '.$this->collation;
 
-                // $sql = "CREATE TABLE `users` (
-                // `id` INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                // `name` VARCHAR(25) NOT NULL,
-                // `pass` VARCHAR(18) NOT NULL,
-                // `email` VARCHAR(45),
-                // `reg_date` TIMESTAMP
-                // ) CHARACTER SET utf8 COLLATE utf8_general_ci";
+                $this->db_query($sql);
             }
         }
 
-
         // Loop through and process columns only
+        foreach($final as $t_key => $t_value) {
+            $cur_column = false;
+            foreach($t_value['columns'] as $c_key => $c_value) {
+                if(isset($c_value['action']) && $c_value['action'] == 'add') {
+                    // Add column 
+                    $sql = 'ALTER TABLE '.$t_key.' ADD COLUMN '.$c_key.' '.strtoupper($c_value['type']).($c_value['constraint'] ? '('.$c_value['constraint'].')': '').' ';
+                    $sql .= ($c_value['default'] ? "DEFAULT '".$c_value['default']."' ": '');
+                    $sql .= ($c_value['null'] ? 'NULL ': 'NOT NULL ');
+                    $sql .= ($c_value['auto_increment'] ? 'AUTO_INCREMENT PRIMARY KEY ': '');
+                    $sql .= ($cur_column ? 'AFTER '.$cur_column.' ': 'FIRST ');
+                    $this->db_query($sql);
 
+                    // Check for indexes
+                    if($c_value['primary'] && !$c_value['auto_increment']) {
+                        $this->db_query('ALTER TABLE '.$t_key.' ADD PRIMARY KEY ('.$c_key.')');
+                    }
+
+                    if($c_value['index']) {
+                        $this->db_query('ALTER TABLE '.$t_key.' ADD INDEX ('.$c_key.')');
+                    }
+
+                    if($c_value['unique']) {
+                        $this->db_query('ALTER TABLE '.$t_key.' ADD UNIQUE ('.$c_key.')');
+                    }
+                }
+                // Set current column
+                $cur_column = $c_key;
+            }
+        }
     }
 
     function process_change($final) {
+        // Loop through and process tables only
+        foreach($final as $t_key => $t_value) {
+            if($t_value['action'] == 'change') {
+                // Currently dont have table changes
+            }
+        }
 
+        // Loop through columns and make changes and necessary
+        foreach($final as $t_key => $t_value) {
+            foreach($t_value['columns'] as $c_key => $c_value) {
+                if(isset($c_value['action']) && $c_value['action'] == 'change') {
+                    //echo '<pre>'; print_r($c_value); echo '</pre>';
+                    if(in_array('type', $c_value['action_list']) || in_array('constraint', $c_value['action_list']) || in_array('default', $c_value['action_list']) || in_array('auto_increment', $c_value['action_list']) || in_array('null', $c_value['action_list'])) {
+                        // Change column
+                        $sql = 'ALTER TABLE '.$t_key.' MODIFY '.$c_key.' '.strtoupper($c_value['type']).($c_value['constraint'] ? '('.$c_value['constraint'].')': '').' ';
+                        $sql .= ($c_value['default'] ? "DEFAULT '".$c_value['default']."' ": '');
+                        $sql .= ($c_value['null'] ? 'NULL ': 'NOT NULL ');
+                        $sql .= ($c_value['auto_increment'] ? 'AUTO_INCREMENT PRIMARY KEY ': '');
+                        $this->db_query($sql);
+                    }
+
+                    // Check for indexes
+                    if(in_array('primary', $c_value['action_list']) && (!$c_value['primary'] || !in_array('auto_increment', $c_value['action_list']))) {
+                        if($c_value['primary']) {
+                            // Add primary key
+                            $this->db_query('ALTER TABLE '.$t_key.' ADD PRIMARY KEY ('.$c_key.')');
+                        } else {
+                            // Drop primary key
+                            $this->db_query('ALTER TABLE '.$t_key.' DROP PRIMARY KEY');
+                        }
+                    }
+
+                    if(in_array('index', $c_value['action_list'])) {
+                        if($c_value['index']) {
+                            // Add index key
+                            $this->db_query('ALTER TABLE '.$t_key.' ADD INDEX ('.$c_key.')');
+                        } else {
+                            // Drop index key
+                            $this->db_query('ALTER TABLE '.$t_key.' DROP INDEX ('.$c_key.')');
+                        }
+                    }
+
+                    if(in_array('unique', $c_value['action_list'])) {
+                        if($c_value['unique']) {
+                            // Add unique key
+                            $this->db_query('ALTER TABLE '.$t_key.' ADD UNIQUE ('.$c_key.')');
+                        } else {
+                            // Drop unique key
+                            $this->db_query('ALTER TABLE '.$t_key.' DROP UNIQUE ('.$c_key.')');
+                        }
+                    }
+                }
+            }
+        }
     }
 
     function process_delete($final) {
+        if(!$this->allow_deletion) {
+            return;
+        }
 
+        // Loop through and process tables only
+        foreach($final as $t_key => $t_value) {
+            if($t_value['action'] == 'delete') {
+                // Drop table
+                $this->db_query('DROP TABLE '.$t_key);
+            }
+        }
+
+        // Loop through columns and drop those who need to be deleted
+        foreach($final as $t_key => $t_value) {
+            foreach($t_value['columns'] as $c_key => $c_value) {
+                if(isset($c_value['action']) && $c_value['action'] == 'delete') {
+                    // Drop column
+                    $this->db_query('ALTER TABLE '.$t_key.' DROP COLUMN '.$c_key);
+                }
+            }
+        }
     }
 }
 
