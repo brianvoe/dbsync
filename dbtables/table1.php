@@ -10,7 +10,7 @@ $cheese_columns = array(
     'user_id' => array(
         'type' => 'INT',
         'constraint' => 11,
-        'index' => 'yes'
+        'index' => true
     ),
     'title' => array(
         'type' => 'VARCHAR',

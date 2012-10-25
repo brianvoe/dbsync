@@ -24,10 +24,10 @@ class Dbsync {
 
     // Settings variables
     public $allow_deletion = false; // By default table deletions are turned off for possible oopsy mistake alleviations
-    public $set_path = 'dbtables'; // Location to settings files
+    public $set_path = 'example'; // Location to settings files
     public $end_file_name = ''; // If needing to append text to file name
     public $end_var_name = '_columns'; // Appended text for var array name in individual table file
-    public $num_per_column = 20; // How many tables to show for each column on frontend
+    public $num_per_column = 6; // How many tables to show for each column on frontend
     //////////////////
     // End Settings //
     //////////////////
