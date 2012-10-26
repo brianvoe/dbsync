@@ -340,12 +340,16 @@ $dbsync->db_close();
     			<li>If you are worried about <strong>ANYTHING</strong> at all, use this as a guide as to things that need to be done only.</li>
     			<li>When making changes to columns in tables that have a lot of data in them, be aware you may get a PHP timeout error.</li>
     			<li>Be aware DBsync will attempt to process your requests but may not fully work if given unrealistic requests. Ex: VARCHAR constraint of 50000000</li>
-    			<li>When setting timestamp default value must also be 'CURRENT_TIMESTAMP'.</li>
-    			<li>When setting auto increment to a column ensure you have primary set as well.</li>
-    			<li>When setting a type enum set the constraints with a double quote and each value in a single qoute. Ex: 'type' => 'ENUM', 'constraint' => " 'flat','percentage' "</li>
     			<li>If you get an error, its an error from php mysqli->error text. If not descriptive enough, process what you can and try to minize it to a specific table.</li>
     			<li>Ensure if you change a column type from one type to another that the data in the column will translate over properly.</li>
     			<li>To ensure additional database security remove database connection settings after running processes.</li>
+    		</ol>
+    		<strong>Column settings</strong>
+    		<ol>
+    			<li>When setting type integer ensure you have a constraint number.</li>
+    			<li>When setting timestamp default value must also be 'CURRENT_TIMESTAMP'.</li>
+    			<li>When setting auto increment to a column ensure you have primary set as well.</li>
+    			<li>When setting a type enum set the constraints with a double quote and each value in a single qoute. Ex: 'type' => 'ENUM', 'constraint' => " 'flat','percentage' "</li>
     		</ol>
     		<strong>Minor</strong>
     		<ol>
@@ -354,7 +358,7 @@ $dbsync->db_close();
     			<li>Check tables for notes before processing there may be something important noted.</li>
     			<li>Click on table name to pull down its column information.</li>
     			<li>The circles next to table names indicates that there are changes that need to happen to columns in table.</li>
-    			<li>Add notes to tables to help others understand what may need to happen.</li>
+    			<li>Add notes to tables to help others understand what may need to happen or general information about the table.</li>
     		</ol>
     	</div>
     	<div class="clear"></div>
