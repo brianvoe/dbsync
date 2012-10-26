@@ -339,6 +339,7 @@ $dbsync->db_close();
     		<ol>
     			<li>If you are worried about <strong>ANYTHING</strong> at all, use this as a guide as to things that need to be done only.</li>
     			<li>When making changes to columns in tables that have a lot of data in them, be aware you may get a PHP timeout error.</li>
+    			<li>Be aware DBsync will attempt to process your requests but may not fully work if given unrealistic requests. Ex: VARCHAR constraint of 50000000</li>
     			<li>When setting auto increment to a column ensure you have primary set as well.</li>
     			<li>When setting a type enum set the constraints with a double quote and each value in a single qoute. Ex: 'type' => 'ENUM', 'constraint' => " 'flat','percentage' "</li>
     			<li>If you get an error, its an error from php mysqli->error text. If not descriptive enough, process what you can and try to minize it to a specific table.</li>
