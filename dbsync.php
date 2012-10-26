@@ -465,7 +465,7 @@ class Dbsync {
                 if(isset($c_value['action']) && $c_value['action'] == 'add') {
                     // Add column 
                     $sql = 'ALTER TABLE '.$t_key.' ADD COLUMN '.$c_key.' '.strtoupper($c_value['type']).($c_value['constraint'] ? '('.$c_value['constraint'].')': '').' ';
-                    $sql .= ($c_value['default'] ? "DEFAULT '".$c_value['default']."' ": '');
+                    $sql .= ($c_value['default'] !== false ? "DEFAULT '".$c_value['default']."' ": '');
                     $sql .= ($c_value['null'] ? 'NULL ': 'NOT NULL ');
                     $sql .= ($c_value['auto_increment'] ? 'AUTO_INCREMENT PRIMARY KEY ': '');
                     $sql .= ($cur_column ? 'AFTER '.$cur_column.' ': 'FIRST ');
@@ -506,10 +506,13 @@ class Dbsync {
                     if(in_array('type', $c_value['action_list']) || in_array('constraint', $c_value['action_list']) || in_array('default', $c_value['action_list']) || in_array('auto_increment', $c_value['action_list']) || in_array('null', $c_value['action_list'])) {
                         // Change column
                         $sql = 'ALTER TABLE '.$t_key.' MODIFY '.$c_key.' '.strtoupper($c_value['type']).($c_value['constraint'] ? '('.$c_value['constraint'].')': '').' ';
-                        $sql .= ($c_value['default'] ? "DEFAULT '".$c_value['default']."' ": '');
+                        $sql .= ($c_value['default'] !== false ? "DEFAULT '".$c_value['default']."' ": '');
                         $sql .= ($c_value['null'] ? 'NULL ': 'NOT NULL ');
                         $sql .= ($c_value['auto_increment'] ? 'AUTO_INCREMENT PRIMARY KEY ': '');
                         $this->db_query($sql);
+                        echo $c_value['default'].'<br />';
+                        echo $sql.'<br />';
+                        echo '<pre>'; print_r($c_value); echo '</pre>';
                     }
 
                     // Drop indexes
