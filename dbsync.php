@@ -146,6 +146,12 @@ class Dbsync {
 
 	    				// Loop through setting and add to current table columns array
 	    				foreach($columns as $c_key => $c_value) {
+                            // Trim enum contraint
+                            if(strtolower($c_value['type']) == 'enum') {
+                                $c_value['constraint'] = trim($c_value['constraint']);
+                            }
+
+                            // Add column to want table
 	    					$this->want_tables[$key]['columns'][$c_key] = array_merge($this->blank_column, $c_value);
 	    				}
 
