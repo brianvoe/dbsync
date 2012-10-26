@@ -4,37 +4,37 @@ $promos_columns = array(
     'id' => array(
         'type' => 'INT',
         'constraint' => 11,
-        'primary' => '1',
+        'primary' => true,
         'auto_increment' => TRUE
     ),
     'user_id' => array(
         'type' => 'INT',
         'constraint' => 11,
-        'index' => 'yes'
+        'index' => true
     ),
     'event_id' => array(
         'type' => 'INT',
         'constraint' => 11,
         'default' => -1,
-        'index' => 'yes'
+        'index' => true
     ),
     'festival_id' => array(
         'type' => 'INT',
         'constraint' => 11,
         'default' => -1,
-        'index' => 'yes'
+        'index' => true
     ),
     'group_id' => array(
         'type' => 'INT',
         'constraint' => 11,
         'default' => -1,
-        'index' => 'yes'
+        'index' => true
     ),
     'series_id' => array(
         'type' => 'INT',
         'constraint' => 11,
         'default' => 0,
-        'index' => 'yes'
+        'index' => true
     ),
     'active' => array(
         'type' => 'TINYINT',
@@ -53,7 +53,7 @@ $promos_columns = array(
     'code' => array(
         'type' => 'VARCHAR',
         'constraint' => 50,
-        'index' => 'yes'
+        'index' => true
     ),
     'amount' => array(
         'type' => 'DECIMAL',

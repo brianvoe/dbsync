@@ -4,7 +4,7 @@ $users_columns = array(
     'id' => array(
         'type' => 'INT',
         'constraint' => 11,
-        'primary' => '1',
+        'primary' => true,
         'auto_increment' => TRUE
     ),
     'parent' => array(
@@ -84,7 +84,8 @@ $users_columns = array(
         'type' => 'DATETIME'
     ),
     'modified' => array(
-        'type' => 'TIMESTAMP'
+        'type' => 'TIMESTAMP',
+        'default' => 'CURRENT_TIMESTAMP'
     )
 );
 

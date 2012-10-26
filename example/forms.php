@@ -4,13 +4,13 @@ $forms_columns = array(
    'id' => array(
         'type' => 'INT',
         'constraint' => 10,
-        'primary' => '1',
+        'primary' => true,
         'auto_increment' => TRUE
     ),
     'user_id' => array(
         'type' => 'INT',
         'constraint' => 11,
-        'index' => 'yes'
+        'index' => true
     ),
     'active' => array(
         'type' => 'TINYINT',

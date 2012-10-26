@@ -4,7 +4,7 @@ $currency_columns = array(
     'id' => array(
         'type' => 'INT',
         'constraint' => 11,
-        'primary' => '1',
+        'primary' => true,
         'auto_increment' => TRUE
     ),
     'title' => array(

@@ -4,23 +4,23 @@ $activity_log_columns = array(
     'id' => array(
         'type' => 'INT',
         'constraint' => 11,
-        'primary' => '1',
+        'primary' => true,
         'auto_increment' => TRUE
     ),
     'user_id' => array(
         'type' => 'INT',
         'constraint' => 11,
-        'index' => 'yes'
+        'index' => true
     ),
     'ind_id' => array(
         'type' => 'INT',
         'constraint' => 11,
-        'index' => 'yes'
+        'index' => true
     ),
     'par_id' => array(
         'type' => 'INT',
         'constraint' => 11,
-        'index' => 'yes'
+        'index' => true
     ),
     'reg_id' => array(
         'type' => 'INT',
@@ -31,13 +31,13 @@ $activity_log_columns = array(
         'type' => 'INT',
         'constraint' => 11,
         'default' => '0',
-        'index' => 'yes'
+        'index' => true
     ),
     'festival_id' => array(
         'type' => 'INT',
         'constraint' => 11,
         'default' => '0',
-        'index' => 'yes'
+        'index' => true
     ),
     'title' => array(
         'type' => 'VARCHAR',

@@ -4,14 +4,14 @@ $error_log_columns = array(
     'id' => array(
         'type' => 'INT',
         'constraint' => 11,
-        'primary' => '1',
+        'primary' => true,
         'auto_increment' => TRUE
     ),
     'ind_id' => array(
         'type' => 'INT',
         'constraint' => 11,
         'default' => 0,
-        'index' => 'yes'
+        'index' => true
     ),
     'error' => array(
         'type' => 'VARCHAR',
