@@ -151,6 +151,11 @@ class Dbsync {
                                 $c_value['constraint'] = trim($c_value['constraint']);
                             }
 
+                            // If type == timestamp && default == current_timestamp uppercase
+                            if(strtolower($c_value['type']) == 'timestamp' && strtolower($c_value['default']) == 'current_timestamp') {
+                                $c_value['default'] = 'CURRENT_TIMESTAMP';
+                            }
+
                             // Add column to want table
 	    					$this->want_tables[$key]['columns'][$c_key] = array_merge($this->blank_column, $c_value);
 	    				}
@@ -508,11 +513,16 @@ class Dbsync {
         foreach($final as $t_key => $t_value) {
             foreach($t_value['columns'] as $c_key => $c_value) {
                 if(isset($c_value['action']) && $c_value['action'] == 'change') {
-                    //echo '<pre>'; print_r($c_value); echo '</pre>';
+                    // echo '<pre>'; print_r($c_value); echo '</pre>';
                     if(in_array('type', $c_value['action_list']) || in_array('constraint', $c_value['action_list']) || in_array('default', $c_value['action_list']) || in_array('auto_increment', $c_value['action_list']) || in_array('null', $c_value['action_list'])) {
                         // Change column
                         $sql = 'ALTER TABLE '.$t_key.' MODIFY '.$c_key.' '.strtoupper($c_value['type']).($c_value['constraint'] ? '('.$c_value['constraint'].')': '').' ';
-                        $sql .= ($c_value['default'] !== false ? "DEFAULT '".$c_value['default']."' ": '');
+                        // If timestamp and defalut == CURRENT_TIMESTAMP set DEFAULT CURRENT_TIMESTAMP
+                        if(strtolower($c_value['type']) == 'timestamp' && strtolower($c_value['default']) == 'current_timestamp') {
+                            $sql .= 'DEFAULT CURRENT_TIMESTAMP ';
+                        } else {
+                            $sql .= ($c_value['default'] !== false ? "DEFAULT '".$c_value['default']."' ": '');
+                        }
                         $sql .= ($c_value['null'] ? 'NULL ': 'NOT NULL ');
                         $sql .= ($c_value['auto_increment'] ? 'AUTO_INCREMENT PRIMARY KEY ': '');
                         $this->db_query($sql);
