@@ -512,34 +512,37 @@ class Dbsync {
                         $this->db_query($sql);
                     }
 
-                    // Check for indexes
+                    // Drop indexes
+                    if(in_array('primary', $c_value['action_list']) && !$c_value['primary']) {
+                        // Drop primary key
+                        $this->db_query('ALTER TABLE '.$t_key.' DROP PRIMARY KEY');
+                    }
+                    if(in_array('index', $c_value['action_list']) && !$c_value['index']) {
+                        // Drop index key
+                        $this->db_query('ALTER TABLE '.$t_key.' DROP INDEX `'.$c_key.'`');
+                    }
+                    if(in_array('unique', $c_value['action_list']) && !$c_value['unique']) {
+                        // Drop unique key
+                        $this->db_query('ALTER TABLE '.$t_key.' DROP INDEX `'.$c_key.'`');
+                    }
+
+                    // Add indexes
                     if(in_array('primary', $c_value['action_list']) && (!$c_value['primary'] || !in_array('auto_increment', $c_value['action_list']))) {
                         if($c_value['primary']) {
                             // Add primary key
                             $this->db_query('ALTER TABLE '.$t_key.' ADD PRIMARY KEY ('.$c_key.')');
-                        } else {
-                            // Drop primary key
-                            $this->db_query('ALTER TABLE '.$t_key.' DROP PRIMARY KEY');
                         }
                     }
-
                     if(in_array('index', $c_value['action_list'])) {
                         if($c_value['index']) {
                             // Add index key
                             $this->db_query('ALTER TABLE '.$t_key.' ADD INDEX ('.$c_key.')');
-                        } else {
-                            // Drop index key
-                            $this->db_query('ALTER TABLE '.$t_key.' DROP INDEX ('.$c_key.')');
                         }
                     }
-
                     if(in_array('unique', $c_value['action_list'])) {
                         if($c_value['unique']) {
                             // Add unique key
                             $this->db_query('ALTER TABLE '.$t_key.' ADD UNIQUE ('.$c_key.')');
-                        } else {
-                            // Drop unique key
-                            $this->db_query('ALTER TABLE '.$t_key.' DROP UNIQUE ('.$c_key.')');
                         }
                     }
                 }
