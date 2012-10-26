@@ -347,6 +347,7 @@ $dbsync->db_close();
     		<strong>Column settings</strong>
     		<ol>
     			<li>When setting type integer ensure you have a constraint number.</li>
+    			<li>When changing DECIMAL constraint and you have a default make sure to change the default to reflect the constraint.</li>
     			<li>When setting timestamp default value must also be 'CURRENT_TIMESTAMP'.</li>
     			<li>When setting auto increment to a column ensure you have primary set as well.</li>
     			<li>When setting a type enum set the constraints with a double quote and each value in a single qoute. Ex: 'type' => 'ENUM', 'constraint' => " 'flat','percentage' "</li>
