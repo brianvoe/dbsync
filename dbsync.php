@@ -64,13 +64,15 @@ class Dbsync {
     public $num_changes = 0;
     public $num_deletes = 0;
 
-    function __construct() {
-        $this->db_connect();
-    }
-
     ////////////////////////
     // Basic Db functions //
     ////////////////////////
+    function db_variables($hostname = false, $username = false, $password = false, $database = false) {
+        $this->hostname = $hostname;
+        $this->username = $username;
+        $this->password = $password;
+        $this->database = $database;
+    }
     function db_connect() {
     	$this->mysqli = new mysqli($this->hostname, $this->username, $this->password, $this->database);
 		if ($this->mysqli->connect_error) {
@@ -438,7 +440,12 @@ class Dbsync {
                 // Loop through columns and put together array
                 foreach($t_value['columns'] as $c_key => $c_value) {
                     $c_txt = '`'.$c_key.'` '.strtoupper($c_value['type']).($c_value['constraint'] ? '('.$c_value['constraint'].')': '').' ';
-                    $c_txt .= ($c_value['default'] ? "DEFAULT '".$c_value['default']."' ": '');
+                    // If timestamp and defalut == CURRENT_TIMESTAMP set DEFAULT CURRENT_TIMESTAMP
+                    if(strtolower($c_value['type']) == 'timestamp' && strtolower($c_value['default']) == 'current_timestamp') {
+                        $c_txt .= 'DEFAULT CURRENT_TIMESTAMP ';
+                    } else {
+                        $c_txt .= ($c_value['default'] !== false ? "DEFAULT '".$c_value['default']."' ": '');
+                    }
                     $c_txt .= ($c_value['null'] ? 'NULL ': 'NOT NULL ');
                     $c_txt .= ($c_value['auto_increment'] ? 'AUTO_INCREMENT ': '');
                     
@@ -476,7 +483,12 @@ class Dbsync {
                 if(isset($c_value['action']) && $c_value['action'] == 'add') {
                     // Add column 
                     $sql = 'ALTER TABLE '.$t_key.' ADD COLUMN '.$c_key.' '.strtoupper($c_value['type']).($c_value['constraint'] ? '('.$c_value['constraint'].')': '').' ';
-                    $sql .= ($c_value['default'] !== false ? "DEFAULT '".$c_value['default']."' ": '');
+                    // If timestamp and defalut == CURRENT_TIMESTAMP set DEFAULT CURRENT_TIMESTAMP
+                    if(strtolower($c_value['type']) == 'timestamp' && strtolower($c_value['default']) == 'current_timestamp') {
+                        $sql .= 'DEFAULT CURRENT_TIMESTAMP ';
+                    } else {
+                        $sql .= ($c_value['default'] !== false ? "DEFAULT '".$c_value['default']."' ": '');
+                    }
                     $sql .= ($c_value['null'] ? 'NULL ': 'NOT NULL ');
                     $sql .= ($c_value['auto_increment'] ? 'AUTO_INCREMENT PRIMARY KEY ': '');
                     $sql .= ($cur_column ? 'AFTER '.$cur_column.' ': 'FIRST ');
