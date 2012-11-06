@@ -496,7 +496,7 @@ class Dbsync {
                     }
                     $sql .= ($c_value['null'] ? 'NULL ': 'NOT NULL ');
                     $sql .= ($c_value['auto_increment'] ? 'AUTO_INCREMENT PRIMARY KEY ': '');
-                    $sql .= ($cur_column ? 'AFTER '.$cur_column.' ': 'FIRST ');
+                    $sql .= ($cur_column ? 'AFTER `'.$cur_column.'` ': 'FIRST ');
                     $this->db_query($sql, 'Add Column');
 
                     // Check for indexes
