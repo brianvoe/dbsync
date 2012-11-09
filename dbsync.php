@@ -64,13 +64,15 @@ class Dbsync {
     public $num_changes = 0;
     public $num_deletes = 0;
 
-    function __construct() {
-        $this->db_connect();
-    }
-
     ////////////////////////
     // Basic Db functions //
     ////////////////////////
+    function db_variables($hostname = false, $username = false, $password = false, $database = false) {
+        $this->hostname = $hostname;
+        $this->username = $username;
+        $this->password = $password;
+        $this->database = $database;
+    }
     function db_connect() {
     	$this->mysqli = new mysqli($this->hostname, $this->username, $this->password, $this->database);
 		if ($this->mysqli->connect_error) {
@@ -78,10 +80,15 @@ class Dbsync {
 		}
     }
 
-    function db_query($query) {
+    function db_query($query, $action = false) {
         $result = $this->mysqli->query($query);
         if($this->mysqli->error){
+            if($action) {
+                array_push($this->sql_errors, $action);
+            }
             array_push($this->sql_errors, $this->mysqli->error);
+            array_push($this->sql_errors, $query);
+            array_push($this->sql_errors, '');
         }
         return $result;
     }
@@ -196,14 +203,14 @@ class Dbsync {
     	$errors = array();
 
     	// Start by querying current list of tables in database
-    	$tables = $this->db_query("SHOW TABLES FROM $this->database");
+    	$tables = $this->db_query("SHOW TABLES FROM $this->database", 'Show Tables');
 		if($tables->num_rows > 0) {
 			while($t_info = $tables->fetch_object()) {
-				$table_name = $t_info->Tables_in_dbsync;
+				$table_name = $t_info->{'Tables_in_'.$this->database};
 				$this->itis_tables[$table_name] = array('columns' => array());
 
 				// Go grab columns in database
-				$columns = $this->db_query("SHOW COLUMNS FROM $table_name");
+				$columns = $this->db_query("SHOW COLUMNS FROM $table_name", 'Show Columns');
 				if($columns->field_count > 0) {
 					while($c_info = $columns->fetch_object()) {
 						$field = $this->get_type_constraint($c_info->Type);
@@ -438,7 +445,12 @@ class Dbsync {
                 // Loop through columns and put together array
                 foreach($t_value['columns'] as $c_key => $c_value) {
                     $c_txt = '`'.$c_key.'` '.strtoupper($c_value['type']).($c_value['constraint'] ? '('.$c_value['constraint'].')': '').' ';
-                    $c_txt .= ($c_value['default'] ? "DEFAULT '".$c_value['default']."' ": '');
+                    // If timestamp and defalut == CURRENT_TIMESTAMP set DEFAULT CURRENT_TIMESTAMP
+                    if(strtolower($c_value['type']) == 'timestamp' && strtolower($c_value['default']) == 'current_timestamp') {
+                        $c_txt .= 'DEFAULT CURRENT_TIMESTAMP ';
+                    } else {
+                        $c_txt .= ($c_value['default'] !== false ? "DEFAULT '".$c_value['default']."' ": '');
+                    }
                     $c_txt .= ($c_value['null'] ? 'NULL ': 'NOT NULL ');
                     $c_txt .= ($c_value['auto_increment'] ? 'AUTO_INCREMENT ': '');
                     
@@ -465,7 +477,7 @@ class Dbsync {
                 $sql .= implode(', ', $columns);
                 $sql .= ') ENGINE='.$this->engine_type.' CHARACTER SET '.$this->char_set.' COLLATE '.$this->collation;
 
-                $this->db_query($sql);
+                $this->db_query($sql, 'Create Table');
             }
         }
 
@@ -476,23 +488,28 @@ class Dbsync {
                 if(isset($c_value['action']) && $c_value['action'] == 'add') {
                     // Add column 
                     $sql = 'ALTER TABLE '.$t_key.' ADD COLUMN '.$c_key.' '.strtoupper($c_value['type']).($c_value['constraint'] ? '('.$c_value['constraint'].')': '').' ';
-                    $sql .= ($c_value['default'] !== false ? "DEFAULT '".$c_value['default']."' ": '');
+                    // If timestamp and defalut == CURRENT_TIMESTAMP set DEFAULT CURRENT_TIMESTAMP
+                    if(strtolower($c_value['type']) == 'timestamp' && strtolower($c_value['default']) == 'current_timestamp') {
+                        $sql .= 'DEFAULT CURRENT_TIMESTAMP ';
+                    } else {
+                        $sql .= ($c_value['default'] !== false ? "DEFAULT '".$c_value['default']."' ": '');
+                    }
                     $sql .= ($c_value['null'] ? 'NULL ': 'NOT NULL ');
                     $sql .= ($c_value['auto_increment'] ? 'AUTO_INCREMENT PRIMARY KEY ': '');
-                    $sql .= ($cur_column ? 'AFTER '.$cur_column.' ': 'FIRST ');
-                    $this->db_query($sql);
+                    $sql .= ($cur_column ? 'AFTER `'.$cur_column.'` ': 'FIRST ');
+                    $this->db_query($sql, 'Add Column');
 
                     // Check for indexes
                     if($c_value['primary'] && !$c_value['auto_increment']) {
-                        $this->db_query('ALTER TABLE `'.$t_key.'` ADD PRIMARY KEY ('.$c_key.')');
+                        $this->db_query('ALTER TABLE '.$t_key.' ADD PRIMARY KEY ('.$c_key.')', 'Add Primary Key');
                     }
 
                     if($c_value['index']) {
-                        $this->db_query('ALTER TABLE `'.$t_key.'` ADD INDEX ('.$c_key.')');
+                        $this->db_query('ALTER TABLE '.$t_key.' ADD INDEX ('.$c_key.')', 'Add Index');
                     }
 
                     if($c_value['unique']) {
-                        $this->db_query('ALTER TABLE `'.$t_key.'` ADD UNIQUE ('.$c_key.')');
+                        $this->db_query('ALTER TABLE '.$t_key.' ADD UNIQUE ('.$c_key.')', 'Add Unique');
                     }
                 }
                 // Set current column
@@ -525,40 +542,40 @@ class Dbsync {
                         }
                         $sql .= ($c_value['null'] ? 'NULL ': 'NOT NULL ');
                         $sql .= ($c_value['auto_increment'] ? 'AUTO_INCREMENT PRIMARY KEY ': '');
-                        $this->db_query($sql);
+                        $this->db_query($sql, 'Modify Column');
                     }
 
                     // Drop indexes
                     if(in_array('primary', $c_value['action_list']) && !$c_value['primary']) {
                         // Drop primary key
-                        $this->db_query('ALTER TABLE `'.$t_key.'` DROP PRIMARY KEY');
+                        $this->db_query('ALTER TABLE '.$t_key.' DROP PRIMARY KEY', 'Drop Primary Key');
                     }
                     if(in_array('index', $c_value['action_list']) && !$c_value['index']) {
                         // Drop index key
-                        $this->db_query('ALTER TABLE `'.$t_key.'` DROP INDEX `'.$c_key.'`');
+                        $this->db_query('ALTER TABLE '.$t_key.' DROP INDEX `'.$c_key.'`', 'Drop Index');
                     }
                     if(in_array('unique', $c_value['action_list']) && !$c_value['unique']) {
                         // Drop unique key
-                        $this->db_query('ALTER TABLE `'.$t_key.'` DROP INDEX `'.$c_key.'`');
+                        $this->db_query('ALTER TABLE '.$t_key.' DROP INDEX `'.$c_key.'`', 'Drop Index');
                     }
 
                     // Add indexes
                     if(in_array('primary', $c_value['action_list']) && (!$c_value['primary'] || !in_array('auto_increment', $c_value['action_list']))) {
                         if($c_value['primary']) {
                             // Add primary key
-                            $this->db_query('ALTER TABLE `'.$t_key.'` ADD PRIMARY KEY ('.$c_key.')');
+                            $this->db_query('ALTER TABLE '.$t_key.' ADD PRIMARY KEY ('.$c_key.')', 'Add Primary Key');
                         }
                     }
                     if(in_array('index', $c_value['action_list'])) {
                         if($c_value['index']) {
                             // Add index key
-                            $this->db_query('ALTER TABLE `'.$t_key.'` ADD INDEX ('.$c_key.')');
+                            $this->db_query('ALTER TABLE '.$t_key.' ADD INDEX ('.$c_key.')', 'Add Index');
                         }
                     }
                     if(in_array('unique', $c_value['action_list'])) {
                         if($c_value['unique']) {
                             // Add unique key
-                            $this->db_query('ALTER TABLE `'.$t_key.'` ADD UNIQUE ('.$c_key.')');
+                            $this->db_query('ALTER TABLE '.$t_key.' ADD UNIQUE ('.$c_key.')', 'Add Unique');
                         }
                     }
                 }
@@ -575,7 +592,7 @@ class Dbsync {
         foreach($final as $t_key => $t_value) {
             if($t_value['action'] == 'delete') {
                 // Drop table
-                $this->db_query('DROP TABLE '.$t_key);
+                $this->db_query('DROP TABLE '.$t_key, 'Drop Table');
             }
         }
 
@@ -584,7 +601,7 @@ class Dbsync {
             foreach($t_value['columns'] as $c_key => $c_value) {
                 if(isset($c_value['action']) && $c_value['action'] == 'delete') {
                     // Drop column
-                    $this->db_query('ALTER TABLE '.$t_key.' DROP COLUMN '.$c_key);
+                    $this->db_query('ALTER TABLE '.$t_key.' DROP COLUMN '.$c_key, 'Drop Column');
                 }
             }
         }

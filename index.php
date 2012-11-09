@@ -3,6 +3,8 @@
 include 'dbsync.php';
 $dbsync = new dbsync();
 
+$dbsync->db_connect();
+
 $final_list = $dbsync->compile_compare();
 
 if(isset($_POST['all'])){
