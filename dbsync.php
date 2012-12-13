@@ -460,15 +460,15 @@ class Dbsync {
                 // Loop through columns and put together array
                 foreach($t_value['columns'] as $c_key => $c_value) {
                     if($c_value['primary']) {
-                        array_push($columns, 'PRIMARY KEY ('.$c_key.')');
+                        array_push($columns, 'PRIMARY KEY (`'.$c_key.'`)');
                     }
 
                     if($c_value['index']) {
-                        array_push($columns, 'INDEX ('.$c_key.')');
+                        array_push($columns, 'INDEX (`'.$c_key.'`)');
                     }
 
                     if($c_value['unique']) {
-                        array_push($columns, 'UNIQUE ('.$c_key.')');
+                        array_push($columns, 'UNIQUE (`'.$c_key.'`)');
                     }
                 }
 
@@ -501,15 +501,15 @@ class Dbsync {
 
                     // Check for indexes
                     if($c_value['primary'] && !$c_value['auto_increment']) {
-                        $this->db_query('ALTER TABLE `'.$t_key.'` ADD PRIMARY KEY ('.$c_key.')', 'Add Primary Key');
+                        $this->db_query('ALTER TABLE `'.$t_key.'` ADD PRIMARY KEY (`'.$c_key.'`)', 'Add Primary Key');
                     }
 
                     if($c_value['index']) {
-                        $this->db_query('ALTER TABLE `'.$t_key.'` ADD INDEX ('.$c_key.')', 'Add Index');
+                        $this->db_query('ALTER TABLE `'.$t_key.'` ADD INDEX (`'.$c_key.'`)', 'Add Index');
                     }
 
                     if($c_value['unique']) {
-                        $this->db_query('ALTER TABLE `'.$t_key.'` ADD UNIQUE ('.$c_key.')', 'Add Unique');
+                        $this->db_query('ALTER TABLE `'.$t_key.'` ADD UNIQUE (`'.$c_key.'`)', 'Add Unique');
                     }
                 }
                 // Set current column
@@ -563,19 +563,19 @@ class Dbsync {
                     if(in_array('primary', $c_value['action_list']) && (!$c_value['primary'] || !in_array('auto_increment', $c_value['action_list']))) {
                         if($c_value['primary']) {
                             // Add primary key
-                            $this->db_query('ALTER TABLE `'.$t_key.'` ADD PRIMARY KEY ('.$c_key.')', 'Add Primary Key');
+                            $this->db_query('ALTER TABLE `'.$t_key.'` ADD PRIMARY KEY (`'.$c_key.'`)', 'Add Primary Key');
                         }
                     }
                     if(in_array('index', $c_value['action_list'])) {
                         if($c_value['index']) {
                             // Add index key
-                            $this->db_query('ALTER TABLE `'.$t_key.'` ADD INDEX ('.$c_key.')', 'Add Index');
+                            $this->db_query('ALTER TABLE `'.$t_key.'` ADD INDEX (`'.$c_key.'`)', 'Add Index');
                         }
                     }
                     if(in_array('unique', $c_value['action_list'])) {
                         if($c_value['unique']) {
                             // Add unique key
-                            $this->db_query('ALTER TABLE `'.$t_key.'` ADD UNIQUE ('.$c_key.')', 'Add Unique');
+                            $this->db_query('ALTER TABLE `'.$t_key.'` ADD UNIQUE (`'.$c_key.'`)', 'Add Unique');
                         }
                     }
                 }
