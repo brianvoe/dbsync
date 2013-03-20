@@ -10,7 +10,8 @@ $products_columns = array(
     'user_id' => array(
         'type' => 'INT',
         'constraint' => 11,
-        'index' => true
+        'index' => true,
+        'extra' => 'unsigned'
     ),
     'active' => array(
         'type' => 'TINYINT',
@@ -33,6 +34,11 @@ $products_columns = array(
     'minmax' => array(
         'type' => 'VARCHAR',
         'constraint' => 15
+    ),
+    'modified' => array(
+        'type' => 'TIMESTAMP',
+        'default' => 'current_timestamp',
+        'on_update_time' => true
     ),
     'created' => array(
         'type' => 'DATETIME'

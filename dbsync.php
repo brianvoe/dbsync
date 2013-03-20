@@ -23,7 +23,7 @@ class Dbsync {
     public $collation = 'utf8_bin'; // Set collation type
 
     // Settings variables
-    public $allow_deletion = false; // By default table deletions are turned off for possible oopsy mistake alleviations
+    public $allow_deletion = true; // By default table deletions are turned off for possible oopsy mistake alleviations
     public $set_path = 'example'; // Location to settings files
     public $end_file_name = ''; // If needing to append text to file name
     public $end_var_name = '_columns'; // Appended text for var array name in individual table file
@@ -56,7 +56,9 @@ class Dbsync {
 		'index' => false,
 		'unique' => false,
 		'auto_increment' => false,
-		'null' => false
+		'null' => false,
+        'on_update_time' => false,
+        'extra' => false
 	);
 
     // Usable Variables
@@ -101,14 +103,31 @@ class Dbsync {
     // Misc fucntions //
     ////////////////////
     function get_type_constraint($type) {
+        // Strip out extra
+        $extra = false;
+        if (strpos($type, 'binary') !== false) {
+            $extra = 'binary';
+            $type = trim(str_replace('binary', '', $type));
+        } 
+        if (strpos($type, 'unsigned zerofill') !== false) {
+            $extra = 'unsigned zerofill';
+            $type = trim(str_replace('unsigned zerofill', '', $type));
+        }
+        if (strpos($type, 'unsigned') !== false) {
+            $extra = 'unsigned';
+            $type = trim(str_replace('unsigned', '', $type));
+        }
+        
+
+        // If it has 
     	if (strpos($type, '(') !== false) {
     		$split = explode('(', $type);
     		$type = $split[0];
     		$constraint = str_replace(')', '', $split[1]);
 
-		    return array('type' => $type, 'constraint' => $constraint);
+		    return array('type' => $type, 'constraint' => $constraint, 'extra' => $extra);
 		} else {
-			return array('type' => $type, 'constraint' => false);
+			return array('type' => $type, 'constraint' => false, 'extra' => $extra);
 		}
     }
 
@@ -159,7 +178,7 @@ class Dbsync {
                             }
 
                             // If type == timestamp && default == current_timestamp uppercase
-                            if(strtolower($c_value['type']) == 'timestamp' && strtolower($c_value['default']) == 'current_timestamp') {
+                            if(strtolower($c_value['type']) == 'timestamp' && isset($c_value['default']) && strtolower($c_value['default']) == 'current_timestamp') {
                                 $c_value['default'] = 'CURRENT_TIMESTAMP';
                             }
 
@@ -223,7 +242,9 @@ class Dbsync {
 							'index' => ($c_info->Key == 'MUL' ? true: false),
 							'unique' => ($c_info->Key == 'UNI' ? true: false),
 							'auto_increment' => ($c_info->Extra == 'auto_increment' ? true: false),
-							'null' => ($c_info->Null == 'YES' ? true : false)
+                            'on_update_time' => ($c_info->Extra == 'on update CURRENT_TIMESTAMP' ? true: false),
+                            'extra' => $field['extra'],
+                            'null' => ($c_info->Null == 'YES' ? true : false)
 						);
 
 						// Uncomment to view current column info
@@ -414,11 +435,25 @@ class Dbsync {
             $return_txt .= '<div class="attrname"><div class="width80 inline">Unique:</div> '.($c_value['unique'] ? 'true': 'false').'</div>';
         }
 
+        // Extra
+        if(isset($c_value['action']) && $c_value['action'] == 'change' && in_array('extra', $c_value['action_list'])) {
+            $return_txt .= '<div class="attrname change"><div class="width80 inline">Extra:</div> '.$c_value['itis']['extra'].' to '.$c_value['extra'].'</div>';
+        } else if($c_value['extra']) {
+            $return_txt .= '<div class="attrname"><div class="width80 inline">Extra:</div> '.$c_value['extra'].'</div>';
+        }
+
         // Auto Increment
         if(isset($c_value['action']) && $c_value['action'] == 'change' && in_array('auto_increment', $c_value['action_list'])) {
             $return_txt .= '<div class="attrname change"><div class="width80 inline">Auto Incr:</div> '.($c_value['itis']['auto_increment'] ? 'true': 'false').' to '.($c_value['auto_increment'] ? 'true': 'false').'</div>';
         } else if($c_value['auto_increment']) {
             $return_txt .= '<div class="attrname"><div class="width80 inline">Auto Incr:</div> '.($c_value['auto_increment'] ? 'true': 'false').'</div>';
+        }
+
+        // On Update Timestamp
+        if(isset($c_value['action']) && $c_value['action'] == 'change' && in_array('on_update_time', $c_value['action_list'])) {
+            $return_txt .= '<div class="attrname change"><div class="width80 inline">Update Time:</div> '.($c_value['itis']['on_update_time'] ? 'true': 'false').' to '.($c_value['on_update_time'] ? 'true': 'false').'</div>';
+        } else if($c_value['on_update_time']) {
+            $return_txt .= '<div class="attrname"><div class="width80 inline">Update Time:</div> '.($c_value['on_update_time'] ? 'true': 'false').'</div>';
         }
 
         // Null
@@ -445,12 +480,22 @@ class Dbsync {
                 // Loop through columns and put together array
                 foreach($t_value['columns'] as $c_key => $c_value) {
                     $c_txt = '`'.$c_key.'` '.strtoupper($c_value['type']).($c_value['constraint'] ? '('.$c_value['constraint'].')': '').' ';
+
+                    // Add extra
+                    $c_txt .= ($c_value['extra'] ? strtoupper($c_value['extra']).' ': '');
+
                     // If timestamp and defalut == CURRENT_TIMESTAMP set DEFAULT CURRENT_TIMESTAMP
                     if(strtolower($c_value['type']) == 'timestamp' && strtolower($c_value['default']) == 'current_timestamp') {
                         $c_txt .= 'DEFAULT CURRENT_TIMESTAMP ';
                     } else {
                         $c_txt .= ($c_value['default'] !== false ? "DEFAULT '".$c_value['default']."' ": '');
                     }
+
+                    // If on_update_time add to query
+                    if($c_value['on_update_time'] == true) {
+                        $c_txt .= 'ON UPDATE CURRENT_TIMESTAMP ';
+                    }
+
                     $c_txt .= ($c_value['null'] ? 'NULL ': 'NOT NULL ');
                     $c_txt .= ($c_value['auto_increment'] ? 'AUTO_INCREMENT ': '');
                     
@@ -488,12 +533,22 @@ class Dbsync {
                 if(isset($c_value['action']) && $c_value['action'] == 'add') {
                     // Add column 
                     $sql = 'ALTER TABLE `'.$t_key.'` ADD COLUMN `'.$c_key.'` '.strtoupper($c_value['type']).($c_value['constraint'] ? '('.$c_value['constraint'].')': '').' ';
+
+                    // Add extra
+                    $sql .= ($c_value['extra'] ? strtoupper($c_value['extra']).' ': '');
+                    
                     // If timestamp and defalut == CURRENT_TIMESTAMP set DEFAULT CURRENT_TIMESTAMP
                     if(strtolower($c_value['type']) == 'timestamp' && strtolower($c_value['default']) == 'current_timestamp') {
                         $sql .= 'DEFAULT CURRENT_TIMESTAMP ';
                     } else {
                         $sql .= ($c_value['default'] !== false ? "DEFAULT '".$c_value['default']."' ": '');
                     }
+
+                    // If on_update_time add to query
+                    if($c_value['on_update_time'] == true) {
+                        $sql .= 'ON UPDATE CURRENT_TIMESTAMP ';
+                    }
+
                     $sql .= ($c_value['null'] ? 'NULL ': 'NOT NULL ');
                     $sql .= ($c_value['auto_increment'] ? 'AUTO_INCREMENT PRIMARY KEY ': '');
                     $sql .= ($cur_column ? 'AFTER `'.$cur_column.'` ': 'FIRST ');
@@ -531,15 +586,25 @@ class Dbsync {
             foreach($t_value['columns'] as $c_key => $c_value) {
                 if(isset($c_value['action']) && $c_value['action'] == 'change') {
                     // echo '<pre>'; print_r($c_value); echo '</pre>';
-                    if(in_array('type', $c_value['action_list']) || in_array('constraint', $c_value['action_list']) || in_array('default', $c_value['action_list']) || in_array('auto_increment', $c_value['action_list']) || in_array('null', $c_value['action_list'])) {
+                    if(in_array('type', $c_value['action_list']) || in_array('constraint', $c_value['action_list']) || in_array('default', $c_value['action_list']) || in_array('extra', $c_value['action_list']) || in_array('auto_increment', $c_value['action_list']) || in_array('on_update_time', $c_value['action_list']) || in_array('null', $c_value['action_list'])) {
                         // Change column
                         $sql = 'ALTER TABLE `'.$t_key.'` MODIFY `'.$c_key.'` '.strtoupper($c_value['type']).($c_value['constraint'] ? '('.$c_value['constraint'].')': '').' ';
+                        
+                        // Add extra
+                        $sql .= ($c_value['extra'] ? strtoupper($c_value['extra']).' ': '');
+
                         // If timestamp and defalut == CURRENT_TIMESTAMP set DEFAULT CURRENT_TIMESTAMP
                         if(strtolower($c_value['type']) == 'timestamp' && strtolower($c_value['default']) == 'current_timestamp') {
                             $sql .= 'DEFAULT CURRENT_TIMESTAMP ';
                         } else {
                             $sql .= ($c_value['default'] !== false ? "DEFAULT '".$c_value['default']."' ": '');
                         }
+
+                        // If on_update_time add to query
+                        if($c_value['on_update_time'] == true) {
+                            $sql .= 'ON UPDATE CURRENT_TIMESTAMP ';
+                        }
+
                         $sql .= ($c_value['null'] ? 'NULL ': 'NOT NULL ');
                         $sql .= ($c_value['auto_increment'] ? 'AUTO_INCREMENT PRIMARY KEY ': '');
                         $this->db_query($sql, 'Modify Column');
