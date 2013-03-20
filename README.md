@@ -63,7 +63,7 @@ but want keep a local database copy for testing.
 			&nbsp;&nbsp;&nbsp;&nbsp;<strong>'unique' => false,</strong> // Optional - Default is false - Indicates whether or not column is a unique index<br />
 			&nbsp;&nbsp;&nbsp;&nbsp;<strong>'auto_increment' => false,</strong> // Optional - Default is false - Indicates whether or not column is auto_incremented to next number<br />
 			&nbsp;&nbsp;&nbsp;&nbsp;<strong>'null' => false</strong> // Optional - Default is false - Indicates whether or not column can be null<br />
-			&nbsp;&nbsp;&nbsp;&nbsp;<strong>'on_update_time' => false</strong> // Optional - Default if false - Whether or not to update on row modification<br />
+			&nbsp;&nbsp;&nbsp;&nbsp;<strong>'on_update_time' => false</strong> // Optional - Default is false - Whether or not to update on row modification<br />
 			&nbsp;&nbsp;&nbsp;&nbsp;<strong>'extra' => {attribute value}</strong> // Optional - BINARY, UNSIGNED or UNSIGNED ZEROFILL<br />
 			)
 		</li>
